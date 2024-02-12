@@ -6,7 +6,7 @@ This is a set of jira scripts that will gather JIRA stats or create spreadsheets
 
 These instructions are more mac OS.
 
-1. Install [anaconda](https://docs.anaconda.com/free/anaconda/install/mac-os/#wizard-install)
+1. Install [miniconda](https://docs.anaconda.com/free/miniconda/miniconda-install/)
 1. After this is installed, open up "terminal".  Click the magnifying glass on the top right corner and type terminal and click it.
 1. Create your conda environment
 
