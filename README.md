@@ -26,29 +26,15 @@ These instructions are more mac OS.
 
 
 1. Make sure to create a JIRA api token: https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/
-1. Run this code from the terminal by typing in `ipython`
+1. Run this code in the terminal (assuming you've followed instructions above)
 
     ```
-    from jira import JIRA
-    username = "@sagebase.org"
-    api_token = "..."
-    jira_client = JIRA(
-        server='https://sagebionetworks.jira.com/',
-        basic_auth=(username, api_token)
-    )
-    issue = jira_client.issue('JRA-9')
-    print(issue.fields.project.key)
-    print(issue.fields.issuetype.name)
-    print(issue.fields.reporter.displayName)
+    conda activate jira
+    export JIRA_API_TOKEN="your jira token above
+    export JIRA_USERNAME="your sage email"
+    python jira_metrics.py
     ```
 
-1. Try to run this query
+1. A file named `dpe_sprint_info.csv` will be created, you can view this file in excel.
 
-    ```
-    TODO: this is TBD
-    # project in (IBCDPE) AND (status changed to (closed) after '2023/02/12') AND (status changed to (closed) before '2023/02/28') and type not in (subTaskIssueTypes(), epic)
-
-    # Sprint = 539 AND type not in (subTaskIssueTypes(), epic)
-    ```
-
-1. For more information on how to use the jira API, go [here](https://jira.readthedocs.io/)
+For more information on how to use the jira API, go [here](https://jira.readthedocs.io/)
