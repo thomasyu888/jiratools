@@ -50,7 +50,11 @@ def get_issues_per_sprint(jira_client: JIRA, sprint: jira.resources.Sprint) -> p
             pair = pair_details['displayName']
         else:
             pair = None
-        validator = issue_info_raw.get("customfield_11140")
+        validator_details = issue_info_raw.get("customfield_11140")
+        if validator_details is not None:
+            validator = validator_details['displayName']
+        else:
+            validator = None
         time_in_status = issue_info_raw.get("customfield_10000")
         request_type = issue_info_raw.get("customfield_12101")
         start_date = issue_info_raw.get("customfield_12100")
@@ -80,7 +84,10 @@ def get_issues_per_sprint(jira_client: JIRA, sprint: jira.resources.Sprint) -> p
 
         resolution_date = issue_info.fields.resolutiondate
         created_on = issue_info.fields.created
-        resolution = issue_info.fields.resolution
+        if issue_info_raw.get("resolution") is not None:
+            resolution = issue_info.fields.resolution.name
+        else:
+            resolution = None
         project = issue_info.fields.project.name
 
         result.append({
@@ -228,7 +235,7 @@ def main():
     all_sprint_info.to_csv("dpe_sprint_info.csv", index=False)
     date_columns = ['created_on', 'start_date', 'resolution_date']
     for date_column in date_columns:
-        all_sprint_info[date_column] = pd.to_datetime(all_sprint_info[date_column], utc=True)
+        all_sprint_info[date_column] = pd.to_datetime(all_sprint_info[date_column], utc=True).dt.strftime('%Y-%m-%d')
 
     config = dotenv_values(".env")
 
