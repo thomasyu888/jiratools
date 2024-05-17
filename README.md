@@ -18,9 +18,8 @@ These instructions are more mac OS.
 1. Install your Python dependencies
 
     ```
-    pip install jira pandas ipython
+    pip install jira pandas ipython "snowflake-connector-python[pandas]" python-dotenv
     ```
-
 
 ## Usage
 
