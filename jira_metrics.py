@@ -1,3 +1,7 @@
+"""This script will generate the sprint info csv that gets injested into snowflake
+https://docs.google.com/spreadsheets/d/1mp_1Tpy-dWv73bd9eZeaClT7EkWdkXJq3DxcgI9RgaU/edit#gid=0
+spreadsheet containing headers we care about
+"""
 import os
 import datetime
 import pytz
@@ -34,33 +38,85 @@ def get_issues_per_sprint(jira_client: JIRA, sprint: jira.resources.Sprint) -> p
             issue_assignee = issue_info.fields.assignee.displayName
         else:
             issue_assignee = None
+        # Create dict with headers to update later
+        # headers = get_custom_headers(issue_id=issue_info.key)
+        # issues_with_headers = {}
+        # for key in issue_info.raw['fields'].keys():
+        #     if 'customfield' in key:
+        #         new_header = headers[key]
+        #         issues_with_headers[new_header] = issue_info.raw['fields'][key]
+
+        # issue_info.raw['fields'].update(issues_with_headers)
+
         # Story points
         issue_story_points = issue_info.raw['fields'].get("customfield_10014")
+        epic_link = issue_info.raw['fields'].get("customfield_11040")
+        pair_details = issue_info.raw['fields'].get("customfield_12185")
+        if pair_details is not None:
+            pair = pair_details['displayName']
+        else:
+            pair = None
+        validator = issue_info.raw['fields'].get("customfield_11140")
+        time_in_status = issue_info.raw['fields'].get("customfield_10000")
+        request_type = issue_info.raw['fields'].get("customfield_12101")
+        start_date = issue_info.raw['fields'].get("customfield_12100")
         # print(issue_info.raw['fields'].get("customfield_10440"))
         # 'customfield_12105': '6.0',
         # Status of ticket
         last_status = extract_last_status(sprint.endDate, issue.id)
-        issue_status = issue_info.fields.status.name
+        # issue_status = issue_info.fields.status.name
         issue_summary = issue_info.fields.summary
-        issue_desc = issue_info.fields.description
+        # issue_desc = issue_info.fields.description
         issue_type_name = issue_info.fields.issuetype.name
-        # Target start
-        # issue_start_date = issue_info.fields.customfield_12113
-        # issue_due_date = issue_info.fields.duedate
+        labels = issue.fields.labels
+        priority = issue_info.fields.priority.name
+        reporter = issue_info.fields.reporter.displayName
+        parent_details = issue_info.raw['fields'].get('parent')
+        if parent_details is not None:
+            parent = parent_details['key']
+        else:
+            parent = None
+        due_date = issue_info.raw['fields'].get('duedate')
+        # TODO inward and outward issues....
+        linked_issues = []
+        for linked in issue_info.raw['fields'].get('issuelinks'):
+            if linked.get("outwardIssue") is not None:
+                linked_issues.append(linked.get("outwardIssue")['key'])
+            else:
+                linked_issues.append(linked.get("inwardIssue")['key'])
+        # linked_issues = [linked.outwardIssue.key for linked in issue_info.fields.issuelinks]
+        # subtasks = issue_info.fields.subtasks
+        resolution_date = issue_info.fields.resolutiondate
+        created_on = issue_info.fields.created
+        resolution = issue_info.fields.resolution
 
         result.append({
             'sprint_id': sprint.id,
             "issuetype": issue_type_name,
             "id": issue.id,
             "key": issue_info.key,
-            #"summary": issue_summary,
+            "labels": labels,
+            "summary": issue_summary,
             #"description": issue_desc,
             'status': last_status,
             "assignee": issue_assignee,
             'story_points': issue_story_points,
             "sprint": sprint.name,
-            # "target_start": issue_start_date,
-            # "due_date": issue_due_date
+            "epic_link": epic_link,
+            "pair": pair,
+            "validator": validator,
+            "time_in_status": time_in_status,
+            "request_type": request_type,
+            "start_date": start_date,
+            "priority": priority,
+            "reporter": reporter,
+            "parent": parent,
+            "due_date": due_date,
+            "resolution_date": resolution_date,
+            "created_on": created_on,
+            "resolution": resolution,
+            "linked_issues": linked_issues,
+            # "subtasks": subtasks
         })
     jira_issues_df = pd.DataFrame(result)
     return jira_issues_df
@@ -104,6 +160,19 @@ def extract_last_status(end_date: str, ticket_id: str) -> str:
                     status = change['toString']
                     return status
 
+def get_custom_headers(server='https://sagebionetworks.jira.com/', issue_id='BS-1'):
+    username = os.environ['JIRA_USERNAME']
+    api_token = os.environ['JIRA_API_TOKEN']
+    # base_url = 'https://sagebionetworks.jira.com/'
+    auth = requests.auth.HTTPBasicAuth(username, api_token)
+    headers = {
+        "Accept": "application/json"
+    }
+    response = requests.get(f"{server}/rest/api/latest/issue/{issue_id}?expand=names", headers=headers, auth=auth)
+    data = response.json()
+    print(data)
+    return data['names']
+
 
 def main():
     username = os.environ['JIRA_USERNAME']
@@ -119,8 +188,15 @@ def main():
     # board 190 is ETL
     all_sprints = jira_client.sprints(board_id=190)
     all_sprint_info = pd.DataFrame()
+    current_day = datetime.datetime.today()
+
     for sprint in all_sprints:
-        if sprint.name.startswith("DPE") and "Sprint" not in sprint.name and "12.19.22" not in sprint.name:
+        timezone = pytz.timezone('UTC')
+        end_datetime = timezone.localize(datetime.datetime.strptime(sprint.endDate, "%Y-%m-%dT%H:%M:%S.%fZ"))
+        if (sprint.name.startswith("DPE") and
+            "Sprint" not in sprint.name and
+            "12.19.22" not in sprint.name and
+            end_datetime < timezone.localize(current_day)):
             print(sprint.name, sprint.id, sprint.startDate, sprint.endDate)
             df = get_issues_per_sprint(jira_client=jira_client, sprint=sprint)
             all_sprint_info = pd.concat([all_sprint_info, df])

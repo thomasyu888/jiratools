@@ -4,10 +4,9 @@ from snowflake.connector.pandas_tools import write_pandas
 import synapseclient
 import pandas as pd
 
-
 syn = synapseclient.login()
 
-config = dotenv_values("../.env")
+config = dotenv_values(".env")
 
 ctx = snowflake.connector.connect(
     user=config['user'],
