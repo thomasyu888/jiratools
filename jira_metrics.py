@@ -88,8 +88,8 @@ def get_issues_per_sprint(jira_client: JIRA, sprint: jira.resources.Sprint) -> p
             resolution = issue_info.fields.resolution.name
         else:
             resolution = None
-        project = issue_info.fields.project.name
-
+        project = issue_info.fields.project.key
+        # print(project)
         result.append({
             'project': project,
             'sprint_id': sprint.id,
@@ -218,7 +218,8 @@ def main():
             sprint.name.startswith("DPE") and
             "Sprint" not in sprint.name and
             "12.19.22" not in sprint.name and
-            end_datetime < timezone.localize(current_day)
+            end_datetime < timezone.localize(current_day) and
+            sprint.name == 'DPE 2024-07-15 to 2024-07-29'
         ):
             print(sprint.name, sprint.id, sprint.startDate, sprint.endDate)
             sprint_info.append(
@@ -253,7 +254,7 @@ def main():
         all_sprint_info,
         "jira_metrics",
         auto_create_table=True,
-        overwrite=True,
+        # overwrite=True,
         quote_identifiers=False
     )
 
