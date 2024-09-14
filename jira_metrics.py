@@ -207,19 +207,20 @@ def main():
     # Board 189 is the DPE scrum board
     # Board 228 is Synpy scrum board
     # board 190 is ETL
-    all_sprints = jira_client.sprints(board_id=190)
+    all_sprints = jira_client.sprints(board_id=228)
     all_sprint_info = pd.DataFrame()
     current_day = datetime.datetime.today()
     sprint_info = []
     for sprint in all_sprints:
         timezone = pytz.timezone('UTC')
         end_datetime = timezone.localize(datetime.datetime.strptime(sprint.endDate, "%Y-%m-%dT%H:%M:%S.%fZ"))
+        print(sprint.name)
         if (
             sprint.name.startswith("DPE") and
             "Sprint" not in sprint.name and
             "12.19.22" not in sprint.name and
             end_datetime < timezone.localize(current_day) and
-            sprint.name == 'DPE 2024-07-15 to 2024-07-29'
+            sprint.name == 'DPE 2024-08-26 to 2024-09-09'
         ):
             print(sprint.name, sprint.id, sprint.startDate, sprint.endDate)
             sprint_info.append(
@@ -236,7 +237,14 @@ def main():
     all_sprint_info.to_csv("dpe_sprint_info.csv", index=False)
     date_columns = ['created_on', 'start_date', 'resolution_date']
     for date_column in date_columns:
-        all_sprint_info[date_column] = pd.to_datetime(all_sprint_info[date_column], utc=True).dt.strftime('%Y-%m-%d')
+        all_sprint_info[date_column] = pd.to_datetime(all_sprint_info[date_column], utc=True, errors='coerce').dt.strftime('%Y-%m-%d')
+        # HACK: Error: Expression type does not match column data type, expecting DATE but got NUMBER(38,0) for column CREATED_ON
+        # This error occurs but the `write_pandas` function seems to convert a column with empty values to a number type columns
+        if all_sprint_info[date_column].isnull().all():
+            del all_sprint_info[date_column]
+        # tried these below, but they don't work
+        # all_sprint_info[date_column].fillna(pd.NaT, inplace=True)
+        # all_sprint_info[date_column] = all_sprint_info[date_column].astype('datetime64[ns]')
 
     config = dotenv_values(".env")
 
