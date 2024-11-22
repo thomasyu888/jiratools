@@ -66,7 +66,10 @@ def get_issues_per_sprint(jira_client: JIRA, sprint: jira.resources.Sprint) -> p
         issue_type_name = issue_info.fields.issuetype.name
         labels = issue.fields.labels
         priority = issue_info.fields.priority.name
-        reporter = issue_info.fields.reporter.displayName
+        if isinstance(issue_info.fields.reporter, str) or issue_info.fields.reporter is None:
+            reporter = issue_info.fields.reporter
+        else:
+            reporter = issue_info.fields.reporter.displayName
         # Jira recently created a parent field, but sometimes it is empty...
         parent_details = issue_info_raw.get('parent')
         if parent_details is not None:
@@ -207,7 +210,8 @@ def main():
     # Board 189 is the DPE scrum board
     # Board 228 is Synpy scrum board
     # board 190 is ETL
-    all_sprints = jira_client.sprints(board_id=228)
+    # board 257 is Schematic
+    all_sprints = jira_client.sprints(board_id=257)
     all_sprint_info = pd.DataFrame()
     current_day = datetime.datetime.today()
     sprint_info = []
@@ -220,7 +224,7 @@ def main():
             "Sprint" not in sprint.name and
             "12.19.22" not in sprint.name and
             end_datetime < timezone.localize(current_day) and
-            sprint.name == 'DPE 2024-08-26 to 2024-09-09'
+            sprint.name > 'DPE 2024-11-04 to 2024-11-18'
         ):
             print(sprint.name, sprint.id, sprint.startDate, sprint.endDate)
             sprint_info.append(
