@@ -224,7 +224,7 @@ def main():
             "Sprint" not in sprint.name and
             "12.19.22" not in sprint.name and
             end_datetime < timezone.localize(current_day) and
-            sprint.name > 'DPE 2024-11-04 to 2024-11-18'
+            sprint.name > 'DPE 2024-12-16 to 2024-12-30'
         ):
             print(sprint.name, sprint.id, sprint.startDate, sprint.endDate)
             sprint_info.append(
