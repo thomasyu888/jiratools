@@ -224,7 +224,7 @@ def main():
             "Sprint" not in sprint.name and
             "12.19.22" not in sprint.name and
             end_datetime < timezone.localize(current_day) and
-            sprint.name > 'DPE 2024-12-16 to 2024-12-30'
+            sprint.name > 'DPE 2025-10-20 to 2025-11-03'
         ):
             print(sprint.name, sprint.id, sprint.startDate, sprint.endDate)
             sprint_info.append(
@@ -254,8 +254,10 @@ def main():
 
     ctx = snowflake.connector.connect(
         user=config['user'],
-        password=config['password'],
+        # password=config['password'],
         account=config['snowflake_account'],
+        private_key_file=config['private_key_file'],
+        private_key_file_pwd=config['private_key_file_pwd'],
         database="sage",
         schema="DPE",
         role="SYSADMIN",
