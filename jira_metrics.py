@@ -197,6 +197,32 @@ def get_custom_headers(server: str='https://sagebionetworks.jira.com/', issue_id
     return data['names']
 
 
+def get_all_sprints(jira_client: JIRA, board_id: int) -> list:
+    """Get all sprints for a board
+
+    Args:
+        jira_client (JIRA): Logged in Jira session
+        board_id (int): Sprint board id
+
+    Returns:
+        list: list of sprints
+    """
+    all_sprints = []
+    start_at = 0
+    while True:
+        batch = jira_client.sprints(
+            board_id=board_id,
+            state="active,future,closed",
+            startAt=start_at,
+            maxResults=50
+        )
+        if not batch:
+            break
+        all_sprints.extend(batch)
+        start_at += len(batch)
+    return all_sprints
+
+
 def main():
     """Invoke jira metrics
     """
@@ -211,7 +237,10 @@ def main():
     # Board 228 is Synpy scrum board
     # board 190 is ETL
     # board 257 is Schematic
-    all_sprints = jira_client.sprints(board_id=257)
+    # board 242 is GENIE
+    # board 233 is SNOW
+    all_sprints = get_all_sprints(jira_client=jira_client, board_id=189)
+    #  = jira_client.sprints(board_id=189, startAt=120)
     all_sprint_info = pd.DataFrame()
     current_day = datetime.datetime.today()
     sprint_info = []
@@ -224,7 +253,7 @@ def main():
             "Sprint" not in sprint.name and
             "12.19.22" not in sprint.name and
             end_datetime < timezone.localize(current_day) and
-            sprint.name > 'DPE 2025-10-20 to 2025-11-03'
+            sprint.name > 'DPE 2025-12-01 to 2025-12-15'
         ):
             print(sprint.name, sprint.id, sprint.startDate, sprint.endDate)
             sprint_info.append(
@@ -238,6 +267,8 @@ def main():
             )
             df = get_issues_per_sprint(jira_client=jira_client, sprint=sprint)
             all_sprint_info = pd.concat([all_sprint_info, df])
+    if all_sprint_info.empty:
+        raise ValueError("No sprint info found")
     all_sprint_info.to_csv("dpe_sprint_info.csv", index=False)
     date_columns = ['created_on', 'start_date', 'resolution_date']
     for date_column in date_columns:
